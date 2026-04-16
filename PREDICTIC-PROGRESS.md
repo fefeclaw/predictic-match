@@ -179,8 +179,9 @@ Predictic Match/
 | Phase 5 : Output & Visualisation | 3/3 | 🟢 Terminé |
 | Phase 6 : Backtesting & Validation | 2/2 | 🟢 Terminé |
 | Phase 7 : Automatisation & Déploiement | 2/2 | 🟢 Terminé |
+| Phase 8 : Déploiement GitHub & Vercel | 1/3 | 🟡 En cours |
 
-**Total général :** 23/23 tâches complétées (100%) 🎉
+**Total général :** 24/26 tâches complétées (92%)
 
 ---
 
@@ -220,6 +221,14 @@ schedule>=1.2.0
 | 2026-04-16 | 1.0 | Création du document | Assistant |
 | 2026-04-16 | 1.1 | Mise à jour après délégation aux 6 agents spécialisés. 21/23 tâches (91%). | Assistant |
 | 2026-04-16 | 1.2 | **PROJET TERMINÉ** : automation.py + README.md + cron_example.txt créés. 23/23 (100%). | Assistant |
+| 2026-04-16 | 1.3 | Dépôt GitHub créé : https://github.com/fefeclaw/predictic-match - Push initial effectué. 24/26 (92%). | Assistant |
+
+---
+
+### Phase 8 : Déploiement GitHub & Vercel (Nouveau)
+- [x] **8.1** - Création dépôt GitHub + push du code
+- [ ] **8.2** - Déploiement Vercel (interface web)
+- [ ] **8.3** - GitHub Actions workflow (CI/CD)
 
 ---
 
@@ -232,4 +241,6 @@ schedule>=1.2.0
 
 ---
 
-> **🎉 PROJET TERMINÉ !** Toutes les tâches sont complétées. Le système Predictic Match est prêt à l'emploi. Voir README.md pour l'installation et l'utilisation.
+> **🎉 PROJET EN PRODUCTION !** Dépôt GitHub : https://github.com/fefeclaw/predictic-match
+> 
+> **Prochaines étapes :** 8.2 Déploiement Vercel, 8.3 GitHub Actions workflow

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "name": "predictic-match",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["cdg1"],
+  "env": {
+    "PYTHON_ENABLED": "false"
+  }
+}
