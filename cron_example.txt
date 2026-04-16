@@ -1,0 +1,212 @@
+# =============================================================================
+# Predictic Match - Exemples de Crontab pour Automatisation
+# =============================================================================
+# 
+# Installation:
+# 1. Copiez la ligne souhaitée dans votre crontab:
+#    crontab -e
+# 
+# 2. Ajoutez la ligne correspondante à votre besoin
+# 
+# 3. Sauvegardez et quittez
+# 
+# Vérification:
+#    crontab -l          # Liste les jobs planifiés
+#    grep cron /var/log/syslog  # Vérifie l'exécution (Linux)
+#    log show --predicate 'process == "cron"' --last 1h  # macOS
+# 
+# Notes:
+# - Les chemins doivent être absolus dans cron
+# - L'environnement cron est minimal, chargez .env si nécessaire
+# - Redirigez les logs pour déboguer
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# VARIABLES D'ENVIRONNEMENT
+# -----------------------------------------------------------------------------
+# Définissez ces variables en haut de votre crontab
+
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/pyenv/shims
+PYTHONPATH=/Users/mobi/Predictic Match
+
+# Chemin vers votre environnement virtuel (si utilisé)
+# VIRTUALENV=/Users/mobi/Predictic Match/venv
+
+# Répertoire du projet
+PROJECT_DIR=/Users/mobi/Predictic Match
+
+# -----------------------------------------------------------------------------
+# OPTION 1: Exécution Quotidienne (Recommandé)
+# -----------------------------------------------------------------------------
+# Exécute le pipeline tous les jours à 6h00 du matin
+# Idéal pour mettre à jour les prédictions avant les matchs du week-end
+
+# Format: minute heure jour mois jour_semaine commande
+
+# Tous les jours à 6h00 - Premier League
+0 6 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league E0 --output $PROJECT_DIR/output/predictions >> $PROJECT_DIR/logs/cron_daily.log 2>&1
+
+# Tous les jours à 6h00 - Multiple ligues (séquentiel)
+0 6 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league E0 --output $PROJECT_DIR/output/E0 >> $PROJECT_DIR/logs/cron_E0.log 2>&1
+5 6 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league SP1 --output $PROJECT_DIR/output/SP1 >> $PROJECT_DIR/logs/cron_SP1.log 2>&1
+10 6 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league I1 --output $PROJECT_DIR/output/I1 >> $PROJECT_DIR/logs/cron_I1.log 2>&1
+15 6 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league D1 --output $PROJECT_DIR/output/D1 >> $PROJECT_DIR/logs/cron_D1.log 2>&1
+20 6 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league F1 --output $PROJECT_DIR/output/F1 >> $PROJECT_DIR/logs/cron_F1.log 2>&1
+
+# -----------------------------------------------------------------------------
+# OPTION 2: Exécution Hebdomadaire (Économie de ressources)
+# -----------------------------------------------------------------------------
+# Exécute le pipeline une fois par semaine
+# Idéal pour les modèles qui ne nécessitent pas de mises à jour fréquentes
+
+# Tous les lundis à 6h00 - Toutes les ligues principales
+0 6 * * 1 cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league E0 --output $PROJECT_DIR/output/weekly >> $PROJECT_DIR/logs/cron_weekly.log 2>&1
+
+# Tous les dimanches à 22h00 (après les matchs)
+0 22 * * 0 cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league E0 --retrain --output $PROJECT_DIR/output/weekly >> $PROJECT_DIR/logs/cron_retrain.log 2>&1
+
+# -----------------------------------------------------------------------------
+# OPTION 3: Téléchargement des Données (Indépendant du modèle)
+# -----------------------------------------------------------------------------
+# Met à jour les données brutes sans exécuter le modèle complet
+
+# Tous les jours à 5h00 - Téléchargement football-data.co.uk
+0 5 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --fetch --league E0 >> $PROJECT_DIR/logs/cron_fetch.log 2>&1
+
+# Tous les jours à 5h30 - Rafraîchissement Polymarket
+30 5 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --polymarket --leagues E0,SP1,I1,D1,F1 >> $PROJECT_DIR/logs/cron_polymarket.log 2>&1
+
+# -----------------------------------------------------------------------------
+# OPTION 4: Planification Avancée (Python schedule)
+# -----------------------------------------------------------------------------
+# Utilise le scheduler intégré en Python pour plus de flexibilité
+# Nécessite que le script tourne en continu (daemon)
+
+# Démarrage du scheduler au reboot (background)
+@reboot cd $PROJECT_DIR && nohup /usr/local/bin/python3 -m src.automation --league E0 --schedule --frequency daily --time 06:00 >> $PROJECT_DIR/logs/scheduler.log 2>&1 &
+
+# Alternative: Tous les jours à 6h00 avec scheduler
+0 6 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league E0 --schedule --frequency daily --time 06:00 >> $PROJECT_DIR/logs/scheduler.log 2>&1
+
+# -----------------------------------------------------------------------------
+# OPTION 5: Pipeline Complet avec Notifications
+# -----------------------------------------------------------------------------
+# Exécute le pipeline avec notifications Telegram/Discord activées
+
+# Quotidien avec notifications (nécessite .env configuré)
+0 6 * * * cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league E0 --notify --output $PROJECT_DIR/output/predictions >> $PROJECT_DIR/logs/cron_notify.log 2>&1
+
+# Hebdomadaire avec réentraînement et notifications
+0 8 * * 0 cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league E0 --retrain --notify --output $PROJECT_DIR/output/weekly >> $PROJECT_DIR/logs/cron_full.log 2>&1
+
+# -----------------------------------------------------------------------------
+# OPTION 6: Maintenance et Nettoyage
+# -----------------------------------------------------------------------------
+# Tasks de maintenance pour garder le système propre
+
+# Nettoyage des anciens logs (1er du mois à 3h00)
+0 3 1 * * find $PROJECT_DIR/logs -name "*.log" -mtime +30 -delete
+
+# Nettoyage des prédictions anciennes (> 90 jours)
+0 3 1 * * find $PROJECT_DIR/output/predictions -name "*.csv" -mtime +90 -delete
+
+# Sauvegarde des modèles (1er du mois à 4h00)
+0 4 1 * * cd $PROJECT_DIR && tar -czf $PROJECT_DIR/backups/models_$(date +\%Y\%m).tar.gz $PROJECT_DIR/data/models/
+
+# -----------------------------------------------------------------------------
+# EXEMPLES SPÉCIFIQUES PAR LIGUE
+# -----------------------------------------------------------------------------
+
+# Premier League (Angleterre) - Tous les vendredis à 18h (avant le week-end)
+0 18 * * 5 cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league E0 --output $PROJECT_DIR/output/premier_league >> $PROJECT_DIR/logs/cron_E0.log 2>&1
+
+# La Liga (Espagne) - Tous les vendredis à 18h15
+15 18 * * 5 cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league SP1 --output $PROJECT_DIR/output/la_liga >> $PROJECT_DIR/logs/cron_SP1.log 2>&1
+
+# Serie A (Italie) - Tous les vendredis à 18h30
+30 18 * * 5 cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league I1 --output $PROJECT_DIR/output/serie_a >> $PROJECT_DIR/logs/cron_I1.log 2>&1
+
+# Bundesliga (Allemagne) - Tous les vendredis à 18h45
+45 18 * * 5 cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league D1 --output $PROJECT_DIR/output/bundesliga >> $PROJECT_DIR/logs/cron_D1.log 2>&1
+
+# Ligue 1 (France) - Tous les vendredis à 19h
+0 19 * * 5 cd $PROJECT_DIR && /usr/local/bin/python3 -m src.automation --league F1 --output $PROJECT_DIR/output/ligue1 >> $PROJECT_DIR/logs/cron_F1.log 2>&1
+
+# -----------------------------------------------------------------------------
+# SCRIPT WRAPPER RECOMMANDÉ
+# -----------------------------------------------------------------------------
+# Créez un script shell pour simplifier les commandes cron
+
+# Fichier: /Users/mobi/Predictic Match/scripts/run_pipeline.sh
+# -----------------------------------------------------------------------------
+# #!/bin/bash
+# 
+# # run_pipeline.sh - Wrapper pour l'automatisation Predictic Match
+# 
+# set -e  # Arrêt en cas d'erreur
+# 
+# PROJECT_DIR="/Users/mobi/Predictic Match"
+# LOG_DIR="$PROJECT_DIR/logs"
+# DATE=$(date +\%Y\%m\%d_\%H\%M\%S)
+# 
+# # Création du répertoire de logs
+# mkdir -p "$LOG_DIR"
+# 
+# # Activation de l'environnement virtuel (si utilisé)
+# # source "$PROJECT_DIR/venv/bin/activate"
+# 
+# # Navigation vers le répertoire du projet
+# cd "$PROJECT_DIR"
+# 
+# # Exécution du pipeline
+# echo "[$DATE] Démarrage du pipeline..." >> "$LOG_DIR/cron_wrapper.log"
+# 
+# /usr/local/bin/python3 -m src.automation \
+#     --league "${LEAGUE:-E0}" \
+#     --output "$PROJECT_DIR/output/predictions" \
+#     ${RETRAIN:+--retrain} \
+#     ${NOTIFY:+--notify} \
+#     >> "$LOG_DIR/cron_$DATE.log" 2>&1
+# 
+# echo "[$DATE] Pipeline terminé." >> "$LOG_DIR/cron_wrapper.log"
+# -----------------------------------------------------------------------------
+
+# Utilisation dans crontab:
+# 0 6 * * * LEAGUE=E0 $PROJECT_DIR/scripts/run_pipeline.sh
+# 0 6 * * 0 LEAGUE=E0 RETRAIN=1 NOTIFY=1 $PROJECT_DIR/scripts/run_pipeline.sh
+
+# =============================================================================
+# DÉPANNAGE
+# =============================================================================
+# 
+# Problèmes courants:
+# 
+# 1. Commande non trouvée:
+#    - Utilisez les chemins absolus pour python et les scripts
+#    - Vérifiez PATH dans le crontab
+# 
+# 2. Erreurs d'import Python:
+#    - Activez l'environnement virtuel dans le script
+#    - Ou utilisez le chemin absolu vers python de la venv
+# 
+# 3. Fichiers .env non chargés:
+#    - Ajoutez "source $PROJECT_DIR/.env" avant la commande
+#    - Ou dupliquez les variables dans le crontab
+# 
+# 4. Permissions insuffisantes:
+#    - chmod +x sur les scripts shell
+#    - Vérifiez les permissions d'écriture sur output/
+# 
+# 5. Logs vides:
+#    - Redirigez stderr: >> log.log 2>&1
+#    - Vérifiez avec: tail -f log.log
+# 
+# Commandes utiles:
+#    crontab -l              # Liste les jobs
+#    crontab -e              # Édite le crontab
+#    crontab -r              # Supprime tout le crontab
+#    sudo grep CRON /var/log/syslog  # Logs cron (Linux)
+#    log show --predicate 'process == "cron"' --last 24h  # macOS
+# 
+# =============================================================================
